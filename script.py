@@ -13,7 +13,6 @@ load_dotenv()
 class Scraper:
 
     def __init__(self) -> None:
-
         self.getenv()
         self.get_driver()
         self.login()
@@ -58,7 +57,6 @@ class Scraper:
             race_times.append(race_time)
 
         for i,race in enumerate(race_list):
-            print(i)
             a = race.find("a")
             href = a.get("href")
             self.open_live_video(href, race_times[i], race_times[i+1])
@@ -71,11 +69,13 @@ class Scraper:
         print("race time: ", race_time)
         time_difference = self.time_difference(race_time, True)
         print("open time difference: ", time_difference)
-        time.sleep(max(0,time_difference))
+        if (time_difference < 0):
+            return
         page_source = self.driver.page_source
         html_soup = BeautifulSoup(page_source, "html.parser")
         condition = html_soup.find("a", class_=["broadcase-icon" ,"icon-livevideo"])
         if condition is not None:
+            time.sleep(max(0,time_difference))
             live_stream = self.driver.find_element(By.LINK_TEXT, "Live Stream")
             live_stream.click()
             self.driver.switch_to.window(self.driver.window_handles[-1])
