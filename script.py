@@ -57,34 +57,40 @@ class Scraper:
             race_times.append(race_time)
 
         for i,race in enumerate(race_list):
-            a = race.find("a")
-            href = a.get("href")
-            self.open_live_video(href, race_times[i], race_times[i+1])
+            if i < len(race_list):
+                a = race.find("a")
+                href = a.get("href")
+                self.open_live_video(href, race_times[i], race_times[i+1])
 
         self.driver.quit()
 
     def open_live_video(self, href, start_time, end_time):
-        self.driver.get(self.site + href)
         race_time = datetime.strptime(start_time, "%H:%M").time()
-        print("race time: ", race_time)
-        time_difference = self.time_difference(race_time, True)
-        print("open time difference: ", time_difference)
-        if (time_difference < 0):
-            return
-        page_source = self.driver.page_source
-        html_soup = BeautifulSoup(page_source, "html.parser")
-        condition = html_soup.find("a", class_=["broadcase-icon" ,"icon-livevideo"])
-        if condition is not None:
-            time.sleep(max(0,time_difference))
-            live_stream = self.driver.find_element(By.LINK_TEXT, "Live Stream")
-            live_stream.click()
-            self.driver.switch_to.window(self.driver.window_handles[-1])
-            close_time = datetime.strptime(end_time, "%H:%M").time()
-            closing_time = self.time_difference(close_time, False)
-            print("close time difference: ", closing_time)
-            time.sleep(max(0,closing_time))
-            self.driver.close()
-            self.driver.switch_to.window(self.driver.window_handles[0])
+        close_time = datetime.strptime(end_time, "%H:%M").time()
+        if not self.event_ended(close_time):
+            self.driver.get(self.site + href)
+            print("race time: ", race_time)
+            time_difference = self.time_difference(race_time, True)
+            print("open time difference: ", time_difference)
+            time.sleep(5)
+            page_source = self.driver.page_source
+            html_soup = BeautifulSoup(page_source, "html.parser")
+            condition = html_soup.find("a", class_=["broadcase-icon" ,"icon-livevideo"])
+            if condition is not None:
+                time.sleep(max(0,time_difference))
+                live_stream = self.driver.find_element(By.LINK_TEXT, "Live Stream")
+                live_stream.click()
+                self.driver.switch_to.window(self.driver.window_handles[-1])
+                closing_time = self.time_difference(close_time, False)
+                print("close time difference: ", closing_time)
+                time.sleep(max(0,closing_time))
+                self.driver.close()
+                self.driver.switch_to.window(self.driver.window_handles[0])
+
+    def event_ended(self, given_time):
+        current_time = datetime.now()
+        target_datetime = datetime.combine(current_time.date(), given_time)
+        return (current_time > target_datetime)
 
     def time_difference(self, given_time, start):
         delay = 30 if start else 60
