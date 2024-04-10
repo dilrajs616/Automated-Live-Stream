@@ -75,17 +75,16 @@ class Scraper:
         return race_list
 
     def open_live_video(self, href, start_time, end_time):
+        self.driver.get(self.site + href)
         race_time = datetime.strptime(start_time, "%H:%M").time()
         close_time = datetime.strptime(end_time, "%H:%M").time()
-
         current_year = datetime.now().year
         date_element = self.driver.find_element(By.CLASS_NAME, "event-date")
         date_string = date_element.text.strip()
         date_object = datetime.strptime(f"{date_string} {current_year}", "%a %d %b %Y")
-        event_date = date_object.strftime("%Y-%m-%d").date()
+        event_date = date_object.date()
         
-        if not self.event_ended(close_time, event_date):
-            self.driver.get(self.site + href)
+        if not self.event_ended(event_date, close_time):
             print("race time: ", race_time)
             time_difference = self.time_difference(race_time, event_date, True)
             print("open time difference: ", time_difference)
@@ -105,9 +104,9 @@ class Scraper:
                 self.driver.switch_to.window(self.driver.window_handles[0])
 
     def event_ended(self, event_date, given_time):
-        current_time = datetime.now()
+        current_datetime = datetime.now()
         target_datetime = datetime.combine(event_date, given_time)
-        return (current_time > target_datetime)
+        return current_datetime > target_datetime
 
     def time_difference(self, given_time, event_date, start):
         delay = 30 if start else 60
