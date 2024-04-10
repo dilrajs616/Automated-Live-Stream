@@ -39,17 +39,9 @@ class Scraper:
         password_field.send_keys(Keys.RETURN)
         
     def open_horse_bets(self):
+        self.driver.get(self.horse_site)
         time.sleep(5)
-        race_button = self.driver.find_element(By.LINK_TEXT, "Horse Racing - Today's Card")
-        race_button.click()
-        time.sleep(5)
-        horse_racing_section = self.driver.find_element(By.TAG_NAME, "tree-section")
-        soup = BeautifulSoup(horse_racing_section.get_attribute("innerHTML"), "html.parser")
-        race_names = soup.find("tree-section", {"data": "data", "events": "events", "node": "node", "query": "query"})
-        races = race_names.find("ul", class_="section active-section")
-        race_list = races.find_all("li")
-        race_list = [race for race in race_list if '(' not in race.get_text()]
-        race_list = [race for race in race_list if race.get_text().strip()[0].isdigit()]
+        race_list = self.get_race_list()
         race_times = []
         for race in race_list:
             name = race.get_text()
@@ -57,12 +49,30 @@ class Scraper:
             race_times.append(race_time)
 
         for i,race in enumerate(race_list):
-            if i < len(race_list):
+            if i < len(race_list)-1:
                 a = race.find("a")
                 href = a.get("href")
                 self.open_live_video(href, race_times[i], race_times[i+1])
+        
+        condition = True
+        while condition:
+            time.sleep(60)
+            self.driver.get(self.horse_site)
+            new_race_list = self.get_race_list()
+            if new_race_list != race_list:
+                condition = False
+        
+        self.open_horse_bets()
 
-        self.driver.quit()
+    def get_race_list(self):
+        horse_racing_section = self.driver.find_element(By.TAG_NAME, "tree-section")
+        soup = BeautifulSoup(horse_racing_section.get_attribute("innerHTML"), "html.parser")
+        race_names = soup.find("tree-section", {"data": "data", "events": "events", "node": "node", "query": "query"})
+        races = race_names.find("ul", class_="section active-section")
+        race_list = races.find_all("li")
+        race_list = [race for race in race_list if '(' not in race.get_text()]
+        race_list = [race for race in race_list if race.get_text().strip()[0].isdigit()]
+        return race_list
 
     def open_live_video(self, href, start_time, end_time):
         race_time = datetime.strptime(start_time, "%H:%M").time()
@@ -102,5 +112,4 @@ class Scraper:
         return time_difference
 
 if __name__ == "__main__":
-    while True:
-        scraper = Scraper()
+    scraper = Scraper()
