@@ -21,7 +21,7 @@ class Scraper:
     def getenv(self):
         self.site = os.getenv("WEBSITE")
         self.horse_site = os.getenv("HORSESITE")
-        self.username = os.getenv("USERNAME")
+        self.username = os.getenv("USER")
         self.password = os.getenv("PASSWORD")
         self.driver_path = os.getenv("DRIVERPATH")
 
